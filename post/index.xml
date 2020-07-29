@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Posts on Vision</title>
+    <link>/post/</link>
+    <description>Recent content in Posts on Vision</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Thu, 30 Jul 2020 00:20:27 +0800</lastBuildDate>
+    
+        <atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Python中处理SIGTERM signal</title>
+      <link>/post/docker-sigterm/</link>
+      <pubDate>Thu, 30 Jul 2020 00:20:27 +0800</pubDate>
+      
+      <guid>/post/docker-sigterm/</guid>
+      <description>在 Kubernetes 的 container 生命周期管理中，在更新容器、迁移容器时，会触发 graceful shutdown。 Graceful shutdown 的实现是：首先给容器发送 SIGTERM 信号。此时应用需要处理这个信号以实现</description>
+      
+    </item>
+    
+    <item>
+      <title>双栈实现表达式计算</title>
+      <link>/post/expr-calc/</link>
+      <pubDate>Fri, 26 Jun 2020 16:14:27 +0800</pubDate>
+      
+      <guid>/post/expr-calc/</guid>
+      <description>问题描述：给定一个含有 + - * / ( ) 以及数字的合法中缀表达式字符串，求出数值结果。 如：9+(10-8)*7-6/3 计算结果为 21 表达式计算在字符</description>
+      
+    </item>
+    
+  </channel>
+</rss>

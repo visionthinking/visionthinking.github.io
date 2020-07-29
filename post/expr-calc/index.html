@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-cn"><meta charset="utf-8"><meta name="generator" content="Hugo 0.73.0" /><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark"><title>双栈实现表达式计算&nbsp;&ndash;&nbsp;Vision</title><link rel="stylesheet" href="/css/core.min.1110bcea154478048794513f84edb4ddf3d5bd12f8bb7885ae3359d00465ff71409e563ee19b413e4490c5c6b6a7a44b.css" integrity="sha384-ERC86hVEeASHlFE/hO203fPVvRL4u3iFrjNZ0ARl/3FAnlY&#43;4ZtBPkSQxca2p6RL"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="双栈实现表达式计算" /><body><section id="header">
+    <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><span class="site name">Vision</span></a></span>
+        <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/"></a><a class="nav item" href="/tags/"></a><a class="nav item" href="/about/">About</a></nav></div></span></div></section><section id="content"><div class="article-container"><section class="article header">
+    <h1 class="article title">双栈实现表达式计算</h1><p class="article date">Jun 26, 2020</p></section><article class="article markdown-body"><!-- 问题 -->
+<p>问题描述：给定一个含有 + - * / ( ) 以及数字的合法中缀表达式字符串，求出数值结果。
+如：<code>9+(10-8)*7-6/3</code> 计算结果为 <code>21</code></p>
+<!-- 方案 -->
+<p>表达式计算在字符串处理中是一个非常常见的问题。可以先进行问题的分解，使问题简化。
+首先我们考虑只含有 + - * / 运算符的表达式，+ - 的运算优先级低，* / 的优先级高。
+顺序从左往右运算的时候，需要考虑上一个符号(如果有的话)和当前符号的优先级大小。有两种情况</p>
+<ul>
+<li>上一个符号优先级 &gt;= 当前符号优先级：上一个符号优先级高，需要先计算上一个符号的结果。如 <code>3*2-1</code>，当处理 - 时，需要先计算 3*2 的结果。</li>
+<li>上一个符号优先级 &lt; 当前符号优先级：当前符号优先级高，需要等下一个符号才能确定计算次序。</li>
+</ul>
+<p>因为需要考虑符号和数字的上下文，可以使用两个栈 nums 和 ops 来解决。
+那么括号如何处理呢？刚才已经解决了不含有括号的情况，括号内的表达式简单递归求值，当成数字处理即可。</p>
+<p>有一些边界条件需要特殊处理：</p>
+<ul>
+<li>表达式第一个数字是带符号的。如 <code>-3*4</code>，可以在 <code>-</code> 前插入一个 0，变成 <code>0-3*4</code>。</li>
+<li>表达式处理到最后会出现只有一个符号的情况，可以在末尾添加一个最低优先级的特殊符号<code>$</code>，简化判断。这样全部计算完后，就会只剩一个结果数字。</li>
+<li>可以实现一个 tokenize(expr) 函数，把数字和符号都先分开，这样实现简单不易出错。主体逻辑更清楚一些。</li>
+</ul>
+<!-- 代码 -->
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">tokenize</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
+    <span class="c1"># &#39;9+(10-8)*7-6/3&#39; -&gt; [9, &#39;+&#39;, &#39;(10-8)&#39;, &#39;*&#39;, 7, &#39;-&#39;, 6, &#39;/&#39;, 3, &#39;$&#39;]</span>
+    <span class="n">tokens</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">num</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">backet</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">backet_cnt</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">expr</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="s1">&#39; &#39;</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">elif</span> <span class="n">x</span> <span class="o">==</span> <span class="s1">&#39;(&#39;</span> <span class="ow">or</span> <span class="n">backet</span><span class="p">:</span>
+            <span class="n">backet</span> <span class="o">+=</span> <span class="n">x</span>
+            <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="s1">&#39;(&#39;</span><span class="p">:</span> <span class="n">backet_cnt</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="s1">&#39;)&#39;</span><span class="p">:</span> <span class="n">backet_cnt</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">backet_cnt</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">backet</span><span class="p">)</span>
+                <span class="n">backet</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">elif</span> <span class="nb">str</span><span class="o">.</span><span class="n">isdigit</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="n">num</span> <span class="o">+=</span> <span class="n">x</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">num</span><span class="p">:</span>
+                <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">num</span><span class="p">))</span>
+                <span class="n">num</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">num</span><span class="p">:</span>
+        <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">num</span><span class="p">))</span>
+    <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;$&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;+&#39;</span><span class="p">):</span>
+        <span class="n">tokens</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tokens</span>
+
+
+<span class="k">def</span> <span class="nf">calculate</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">nums</span><span class="p">):</span>
+    <span class="n">op</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+    <span class="n">num2</span> <span class="o">=</span> <span class="n">nums</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+    <span class="n">num1</span> <span class="o">=</span> <span class="n">nums</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">op</span> <span class="o">==</span> <span class="s1">&#39;+&#39;</span><span class="p">:</span>
+        <span class="n">nums</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">num1</span> <span class="o">+</span> <span class="n">num2</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">op</span> <span class="o">==</span> <span class="s1">&#39;-&#39;</span><span class="p">:</span>
+        <span class="n">nums</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">num1</span> <span class="o">-</span> <span class="n">num2</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">op</span> <span class="o">==</span> <span class="s1">&#39;*&#39;</span><span class="p">:</span>
+        <span class="n">nums</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">num1</span> <span class="o">*</span> <span class="n">num2</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">op</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
+        <span class="n">nums</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">num1</span> <span class="o">/</span> <span class="n">num2</span><span class="p">)</span>
+
+
+<span class="n">op_priority</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;*&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="s1">&#39;/&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="s1">&#39;+&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s1">&#39;-&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s1">&#39;$&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
+    <span class="n">tokens</span> <span class="o">=</span> <span class="n">tokenize</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+    <span class="n">nums</span><span class="p">,</span> <span class="n">ops</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+            <span class="n">nums</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">token</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;(&#39;</span><span class="p">:</span>
+            <span class="n">nums</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">evaluate</span><span class="p">(</span><span class="n">token</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">while</span> <span class="n">ops</span> <span class="ow">and</span> <span class="n">op_priority</span><span class="p">[</span><span class="n">ops</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="o">&gt;=</span> <span class="n">op_priority</span><span class="p">[</span><span class="n">token</span><span class="p">]:</span>
+                <span class="n">calculate</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">nums</span><span class="p">)</span>
+            <span class="n">ops</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">nums</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&#34;__main__&#34;</span><span class="p">:</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="s1">&#39;9+(10-8)*7-6/3&#39;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+</code></pre></div></article><section class="article labels"><a class="tag" href=/tags/%E7%AE%97%E6%B3%95/>算法</a></section></div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/post/docker-sigterm/"><span class="iconfont icon-article"></span>Python中处理SIGTERM signal</a></p></section><section class="article discussion"><div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "visionthinking" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></section></div></section><section id="footer"><div class="footer-wrap">
+    <p class="copyright">Vision</p>
+    <p class="powerby"><span>Powered by </span><a href="https://gohugo.io" 
+        target="_blank">Hugo</a><span> and the </span><a href="https://themes.gohugo.io/hugo-notepadium/" 
+        target="_blank">Notepadium</a></p>
+</div></section></body>
+
+</html>
